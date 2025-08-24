@@ -1,0 +1,27 @@
+name: Daily Duolingo Telegram Report
+
+on:
+  schedule:
+    - cron: '30 1 * * *'   # Runs every day at 07:00 UTC
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        
+      - name: Run animated report
+        run: python duolingo_dashboard_telegram.py
+        env:
+          DUO_USERNAME: ${{ secrets.DUO_USERNAME }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
