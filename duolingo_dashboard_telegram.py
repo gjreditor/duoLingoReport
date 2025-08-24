@@ -1,7 +1,9 @@
 import os
 import requests
 import matplotlib.pyplot as plt
-import imageio
+import imageio.v2 as imageio
+from PIL import Image
+import numpy as np
 
 # -------------------------
 # CONFIG
@@ -35,8 +37,10 @@ def generate_dashboard_gif(user, filename="duo_dashboard.gif"):
     course_xp = [c['xp'] for c in courses]
     
     frames = []
+    tmp_files = []
+    target_size = None  # reference frame size
 
-    # Animate streak progression first
+    # Animate streak progression
     for i in range(1, min(streak_length, 7)+1):
         fig, ax = plt.subplots(figsize=(5,2))
         ax.barh([0], [i], color='green')
@@ -47,9 +51,16 @@ def generate_dashboard_gif(user, filename="duo_dashboard.gif"):
         plt.tight_layout()
         
         tmp_file = f"frame_streak_{i}.png"
+        tmp_files.append(tmp_file)
         plt.savefig(tmp_file)
         plt.close(fig)
-        frames.append(imageio.imread(tmp_file))
+
+        img = Image.open(tmp_file).convert("RGB")
+        if target_size is None:
+            target_size = img.size
+        else:
+            img = img.resize(target_size)
+        frames.append(np.array(img))
 
     # Animate XP per course
     max_xp = max(course_xp) if course_xp else 1
@@ -63,12 +74,22 @@ def generate_dashboard_gif(user, filename="duo_dashboard.gif"):
         plt.tight_layout()
         
         tmp_file = f"frame_xp_{j}.png"
+        tmp_files.append(tmp_file)
         plt.savefig(tmp_file)
         plt.close(fig)
-        frames.append(imageio.imread(tmp_file))
+
+        img = Image.open(tmp_file).convert("RGB")
+        img = img.resize(target_size)
+        frames.append(np.array(img))
 
     # Save all frames as GIF
     imageio.mimsave(filename, frames, duration=0.8)
+
+    # Cleanup temporary PNG files
+    for f in tmp_files:
+        if os.path.exists(f):
+            os.remove(f)
+
     return filename
 
 def send_telegram_animation(bot_token, chat_id, gif_file):
