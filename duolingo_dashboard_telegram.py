@@ -100,6 +100,22 @@ def send_telegram_animation(bot_token, chat_id, gif_file):
         requests.post(url, data=payload, files=files)
     print(f"Sent animated dashboard to chat {chat_id}")
 
+def send_user_summary(bot_token, chat_id, user):
+    streak = user.get("streak", 0)
+    total_xp = sum(c.get("xp", 0) for c in user.get("courses", []))
+    
+    # Sort top 3 courses by XP
+    courses = sorted(user.get("courses", []), key=lambda c: c.get("xp", 0), reverse=True)[:3]
+    course_lines = [f"- {c['title']}: {c['xp']} XP" for c in courses]
+
+    message = (
+        f"📊 *Duolingo Dashboard for {user['username']}*\n\n"
+        f"🔥 Streak: *{streak} days*\n"
+        f"⭐ Total XP: *{total_xp}*\n\n"
+        f"🏆 Top Courses:\n" + "\n".join(course_lines)
+    )
+
+    send_telegram_message(bot_token, chat_id, message)
 # -------------------------
 # MAIN
 # -------------------------
@@ -108,5 +124,7 @@ if __name__ == "__main__":
         raise ValueError("Set DUO_USERNAME, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID environment variables")
     
     user = get_user_data(DUO_USERNAME)
+    send_user_summary(BOT_TOKEN, CHAT_ID, user)
     gif_file = generate_dashboard_gif(user)
     send_telegram_animation(BOT_TOKEN, CHAT_ID, gif_file)
+
