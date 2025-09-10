@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import imageio.v2 as imageio
 from PIL import Image
 import numpy as np
+import json
 
 # -------------------------
 # CONFIG
@@ -127,4 +128,5 @@ if __name__ == "__main__":
     send_user_summary(BOT_TOKEN, CHAT_ID, user)
     gif_file = generate_dashboard_gif(user)
     send_telegram_animation(BOT_TOKEN, CHAT_ID, gif_file)
+
 
