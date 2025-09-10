@@ -21,8 +21,8 @@ jobs:
         run: pip install -r requirements.txt
         
       - name: Run animated report
-        # run: python duolingo_dashboard_telegram.py
-        run: python duolingo_daily_report_Gif.py
+        run: python duolingo_dashboard_telegram.py
+        # run: python duolingo_daily_report_Gif.py
         env:
           DUO_USERNAME: ${{ secrets.DUO_USERNAME }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
