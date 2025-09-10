@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import imageio.v2 as imageio
 from PIL import Image
 import numpy as np
-import json
 
 # -------------------------
 # CONFIG
@@ -30,6 +29,34 @@ def get_user_data(username):
         raise ValueError(f"HTTP Error {resp.status_code}")
     data = resp.json()
     return data["users"][0]
+
+def send_telegram_message(bot_token, chat_id, message):
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown"  # allows *bold* and formatting
+    }
+    resp = requests.post(url, data=payload)
+    if resp.status_code != 200:
+        print(f"Error sending message: {resp.text}")
+
+def send_user_summary(bot_token, chat_id, user):
+    streak = user.get("streak", 0)
+    total_xp = sum(c.get("xp", 0) for c in user.get("courses", []))
+    
+    # Sort top 3 courses by XP
+    courses = sorted(user.get("courses", []), key=lambda c: c.get("xp", 0), reverse=True)[:3]
+    course_lines = [f"- {c['title']}: {c['xp']} XP" for c in courses]
+
+    message = (
+        f"📊 *Duolingo Dashboard for {user['username']}*\n\n"
+        f"🔥 Streak: *{streak} days*\n"
+        f"⭐ Total XP: *{total_xp}*\n\n"
+        f"🏆 Top Courses:\n" + "\n".join(course_lines)
+    )
+
+    send_telegram_message(bot_token, chat_id, message)
 
 def generate_dashboard_gif(user, filename="duo_dashboard.gif"):
     streak_length = user.get("streak", 0)
@@ -101,22 +128,6 @@ def send_telegram_animation(bot_token, chat_id, gif_file):
         requests.post(url, data=payload, files=files)
     print(f"Sent animated dashboard to chat {chat_id}")
 
-def send_user_summary(bot_token, chat_id, user):
-    streak = user.get("streak", 0)
-    total_xp = sum(c.get("xp", 0) for c in user.get("courses", []))
-    
-    # Sort top 3 courses by XP
-    courses = sorted(user.get("courses", []), key=lambda c: c.get("xp", 0), reverse=True)[:3]
-    course_lines = [f"- {c['title']}: {c['xp']} XP" for c in courses]
-
-    message = (
-        f"📊 *Duolingo Dashboard for {user['username']}*\n\n"
-        f"🔥 Streak: *{streak} days*\n"
-        f"⭐ Total XP: *{total_xp}*\n\n"
-        f"🏆 Top Courses:\n" + "\n".join(course_lines)
-    )
-
-    send_telegram_message(bot_token, chat_id, message)
 # -------------------------
 # MAIN
 # -------------------------
@@ -128,5 +139,3 @@ if __name__ == "__main__":
     send_user_summary(BOT_TOKEN, CHAT_ID, user)
     gif_file = generate_dashboard_gif(user)
     send_telegram_animation(BOT_TOKEN, CHAT_ID, gif_file)
-
-
