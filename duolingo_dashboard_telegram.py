@@ -68,27 +68,47 @@ def generate_dashboard_gif(user, filename="duo_dashboard.gif"):
     tmp_files = []
     target_size = None  # reference frame size
 
-    # Animate streak progression
-    for i in range(1, min(streak_length, 7)+1):
+    # Animate streak progression (always at least one frame)
+    max_days = max(streak_length, 7)
+    if streak_length == 0:
+        # Show an empty bar with "0 days"
         fig, ax = plt.subplots(figsize=(5,2))
-        ax.barh([0], [i], color='green')
-        ax.set_xlim(0, max(streak_length, 7))
+        ax.barh([0], [0], color='green')
+        ax.set_xlim(0, max_days)
         ax.set_yticks([])
         ax.set_title(f"{user['username']}'s streak animation")
-        ax.set_xlabel("Days")
+        ax.set_xlabel("Days (0)")
         plt.tight_layout()
         
-        tmp_file = f"frame_streak_{i}.png"
+        tmp_file = "frame_streak_0.png"
         tmp_files.append(tmp_file)
         plt.savefig(tmp_file)
         plt.close(fig)
 
         img = Image.open(tmp_file).convert("RGB")
-        if target_size is None:
-            target_size = img.size
-        else:
-            img = img.resize(target_size)
+        target_size = img.size
         frames.append(np.array(img))
+    else:
+        for i in range(1, min(streak_length, 7)+1):
+            fig, ax = plt.subplots(figsize=(5,2))
+            ax.barh([0], [i], color='green')
+            ax.set_xlim(0, max_days)
+            ax.set_yticks([])
+            ax.set_title(f"{user['username']}'s streak animation")
+            ax.set_xlabel("Days")
+            plt.tight_layout()
+            
+            tmp_file = f"frame_streak_{i}.png"
+            tmp_files.append(tmp_file)
+            plt.savefig(tmp_file)
+            plt.close(fig)
+
+            img = Image.open(tmp_file).convert("RGB")
+            if target_size is None:
+                target_size = img.size
+            else:
+                img = img.resize(target_size)
+            frames.append(np.array(img))
 
     # Animate XP per course
     max_xp = max(course_xp) if course_xp else 1
@@ -139,3 +159,4 @@ if __name__ == "__main__":
     send_user_summary(BOT_TOKEN, CHAT_ID, user)
     gif_file = generate_dashboard_gif(user)
     send_telegram_animation(BOT_TOKEN, CHAT_ID, gif_file)
+
